@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import styles from "./instructionsComponent.module.css";
 import { useAccount, useBalance, useContractRead, useNetwork, useSignMessage } from "wagmi";
-import { Button, Grid, Typography } from "@mui/material";
+import { Box, Button, FormControl, Grid, InputLabel, OutlinedInput, Stack, Typography } from "@mui/material";
 
 
 export default function InstructionsComponent() {
@@ -12,7 +12,7 @@ export default function InstructionsComponent() {
           <h1>Lottery dApp</h1>
         </div>
       </header>
-      <Grid item sx={{ display: 'flex', justifyContent: 'flex-start', p: 6}}>
+      <Grid container direction='row' gap={2} sx={{ p: 6 }}>
           <WalletInfo></WalletInfo>
           <PageBody></PageBody>
       </Grid>
@@ -23,43 +23,37 @@ export default function InstructionsComponent() {
 function PageBody() {
   const { address } = useAccount();
   return (
-   <Grid container gap={2}>
-
-
-      
-    <Grid item>
-       <GetRandom></GetRandom>
-       <PurchaseTokens></PurchaseTokens>
+   <Grid container gap={4} direction='row'>
+    <Typography variant='h3' gutterBottom> Lottery Participant Actions </Typography>
+    <Grid container direction='column' gap={4}>
+      <Grid item sx={{display: 'flex', justifyContent: 'flex-start', gap: '16px'}}> 
+          <GetRandom />
+          <PurchaseTokens/>
+          <Bet />
+      </Grid>
+      <Grid item sx={{display: 'flex', justifyContent: 'flex-start', gap: '16px', flexDirection: 'column'}}>
+        <PrizeWithdraw />
+        <BetMany />
+      </Grid>
+       
      </Grid>
-     
+     <Typography variant='h3' gutterBottom> Lottery Admin Actions </Typography>
+     <Grid container  direction='column' gap={4}>
+     <Grid item sx={{display: 'flex', justifyContent: 'flex-start', gap: '16px', flexDirection: 'column'}}>
+       <OpenBets />
+       <ReturnTokens />
+       </Grid>
+       <Grid item> 
+         <CloseLottery />
+      </Grid>
+     </Grid>
+
     </Grid>
   );
 }
-
 function WalletInfo() {
   const { address, isConnecting, isDisconnected } = useAccount();
   const { chain } = useNetwork();
-  // if (address)
-  //   return (
-  //     <div>
-  //       <p>Your account address is {address}</p>
-  //       <p>Connected to the network {chain?.name}</p>
-  //       <WalletAction></WalletAction>
-  //       <WalletBalance address={address}></WalletBalance>
-  //     </div>
-  //   );
-  // if (isConnecting)
-  //   return (
-  //     <div>
-  //       <p>Loading...</p>
-  //     </div>
-  //   );
-  // if (isDisconnected)
-  //   return (
-  //     <div>
-  //       <p>Wallet disconnected. Connect wallet to continue</p>
-  //     </div>
-  //   );
   return (
     <>
    {isConnecting ?
@@ -68,25 +62,22 @@ function WalletInfo() {
     </div> : ''}
     {address ? <div>
      
-      
-      <Typography> Your account address is {address} </Typography>
-      <p>Connected to the network {chain?.name}</p>
-      {/* <WalletAction></WalletAction> */}
-      <WalletBalance address={address}></WalletBalance>
-      {/* <TokenName />
-      <TokenBalance  address={address}/>
-      <RandomWord /> */}
-
+      <Stack 
+             direction='column'
+             spacing={2}>
+        <Typography> Your account address is {address} </Typography>
+        <Typography> Connected to the network {chain?.name} </Typography>
+        <WalletBalance address={address}></WalletBalance>
+      </Stack>  
+     
     </div> : ''}
     {isDisconnected ? <div>
       <p>Connect wallet to continue</p>
       </div> : ''}
     </>
-    // <div>
-    //   <p>Connect wallet to continue</p>
-    // </div>
   );
 }
+
 function WalletBalance(params: { address: `0x${string}` }) {
   const { data, isError, isLoading } = useBalance({
     address: params.address,
@@ -100,50 +91,129 @@ function WalletBalance(params: { address: `0x${string}` }) {
     </div>
   );
 }
-function TokenAddressFromAPi() {
-  const [data, setData] = useState<any>(null);
-  const [isLoading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetch("http://localhost:3001/get-address")
-    .then((res) => res.json())
-    .then((data) => {
-      setData(data);
-      setLoading(false);
-    });
-  }, []);
+function GetRandom ()  {
+  const [data, setData] = useState<any>(null);
+  const [isLoading, setLoading] = useState(false);
+  if (isLoading) return <p> Getting random number... </p>;
+  if (!data) return (<Button
+        size='large'
+        variant='contained'
+        disabled={isLoading}
+        onClick={() =>  {  
+          setLoading(true);
+          fetch("http://localhost:3001/get-randomNumber")
+          .then((res) => res.json())
+          .then((data) => {
+            setData(data);
+            setLoading(false);
+          });
+          }
+        }
+      >
+        Get Random Number
+      </Button>)
 
   return (
     <div>
-      {isLoading && data ?
-      (<Typography> Loading token address from API... </Typography>): 
-      ''
-      }
-      {data ? 
-         (<Typography> Token Address: {data.address}  </Typography>) : 
-         (<Typography> Token Address: No answer from api </Typography>) 
-      
-      }
+       <p> Random Number: { data }</p>
     </div>
   );
 }
 
-function RequestTokenMint (params: { address: `0x${string}` })  {
+function PurchaseTokens ()  {
+const [data, setData] = useState<any>(null);
+const [isLoading, setLoading] = useState(false);
+
+if (isLoading) return <p>Purchasing tokens... </p>;
+if (!data) return (<Button
+      size='large'
+      variant='contained'
+      disabled={isLoading}
+      onClick={() =>  {  
+        setLoading(true);
+        fetch("http://localhost:3001/purchaseTokens")
+        .then((res) => res.json())
+        .then((data) => {
+          setData(data);
+          setLoading(false);
+        });
+        }
+      }
+    >
+      Purchase Tokens
+    </Button>)
+
+return (
+  <div>
+     <p> Your Hash is: {data.hash}</p>
+  </div>
+);
+}
+
+function OpenBets ()  {
   const [data, setData] = useState<any>(null);
   const [isLoading, setLoading] = useState(false);
-  const requestOptions = {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ address: params.address })
-    };
+  const [_openingTime, setOpeningTime] = useState("0");
+  if (isLoading) return <p> Openning bets... </p>;
+  if (!data) return (
+    <> 
+     <Box
+      component="form"
+      noValidate
+      autoComplete="off"
+    >
+      <Grid container direction='row' gap={2} alignItems='flex-end'>
+      <Grid item> 
+       <FormControl>
+        <InputLabel htmlFor="proposal-input"> Bet Duration </InputLabel>
+        <OutlinedInput 
+            id="proposal-input" 
+            value={_openingTime} 
+            onChange={(e) => setOpeningTime(e.target.value)}
+            label="Bet Duration"
+        />
+      </FormControl>
+      </Grid>
+      <Grid item>
+      <Button
+        sx={{width: '100%'}}
+        size="large"
+        variant='contained'
+        disabled={isLoading}
+        onClick={() =>  {  
+          setLoading(true);
+          fetch(`http://localhost:3001/openBets?closingTime=${Number(_openingTime)}`)
+          .then((res) => res.json())
+          .then((data) => {
+            setData(data);
+            setLoading(false);
+          });
+          }
+        }> Open Bets </Button>
+       </Grid>
+      </Grid>
+    </Box>
+      </>)
+  console.log(data)
+  return (
+    <div>
+       <p> Your Hash is: {data.hash}</p>
+    </div>
+  );
+}
 
-  if (isLoading) return <p> Requesting tokens </p>;
+function Bet ()  {
+  const [data, setData] = useState<any>(null);
+  const [isLoading, setLoading] = useState(false);
+  
+  if (isLoading) return <p> Betting... </p>;
   if (!data) return (<Button
         variant='contained'
         disabled={isLoading}
         onClick={() =>  {  
           setLoading(true);
-          fetch("http://localhost:3001/mint-tokens", requestOptions)
+          fetch("http://localhost:3001/bet")
           .then((res) => res.json())
           .then((data) => {
             setData(data);
@@ -152,143 +222,79 @@ function RequestTokenMint (params: { address: `0x${string}` })  {
           }
         }
       >
-        Request Tokens
+       Bet
       </Button>)
-
+  
   return (
     <div>
-      <Typography> Mint success: { data.success ? 'worked': 'failed'}</Typography>
-      <Typography> Transaction hash: {data.txHash}</Typography>
+       <p> Your Hash is: {data.hash}</p>
     </div>
   );
-}
-function SelfDelegate (params: { address: `0x${string}` })  {
-  const [data, setData] = useState<any>(null);
-  const [isLoading, setLoading] = useState(false);
-  const requestOptions = {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ address: params.address })
-    };
+  };
 
-  if (isLoading) return <Typography> Getting ready to vote... </Typography>;
-  if (!data) return (<Button
-        variant="contained"
-        disabled={isLoading}
-        onClick={() =>  {  
-          setLoading(true);
-          fetch("http://localhost:3001/self-delegate", requestOptions)
-          .then((res) => res.json())
-          .then((data) => {
-            setData(data);
-            setLoading(false);
-          });
-          }
-        }
-      >
-        Ready to Vote
-      </Button>)
-
-  return (
-    <div>
-      <Typography> Vote status: { data.success ? 'Ready': ''}</Typography>
-      <Typography> Transaction hash: {data.txHash}</Typography>
-    </div>
-  );
-}
-function Vote()  {
-  const [data, setData] = useState<any>(null);
-  const [isLoading, setLoading] = useState(false);
-  const [proposal, setProposal] = useState("");
-  const [amount, setAmount] = useState('0');
-  const requestOptions = {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ proposal: proposal, amount: amount })
-    };
-
-  if (isLoading) return <p> Getting ready to vote... </p>;
-  if (!data) return (
-    <> 
-    <form>
-    <label>
-      Enter proposal you would like to vote for
-    </label>
-    <input
-        type="text"
-        value={proposal}
-        onChange={(e) => setProposal(e.target.value)}
-      />
-    <label>
-      Enter amount of tokens you would like to use
-    </label>
-    <input
-        type="text"
-        value={amount}
-        onChange={(e) => setAmount(e.target.value)}
-      />
-  </form>
-      <button
-        disabled={isLoading}
-        onClick={() =>  {  
-          setLoading(true);
-          fetch("http://localhost:3001/vote-proposal", requestOptions)
-          .then((res) => res.json())
-          .then((data) => {
-            setData(data);
-            setLoading(false);
-          });
-          }
-        }
-      >
-        Vote
-      </button>
-      </>)
-
-  return (
-    <div>
-      <p> Vote status: { data.success ? `Successful vote for: ${data.proposalVoted}. ${data.votedFor} ` : 'Vote Failed'}</p>
-      <p> Transaction hash: {data.txHash}</p>
-    </div>
-  );
-}
-
-function WinningProposal ()  {
-  const [data, setData] = useState<any>(null);
-  const [isLoading, setLoading] = useState(false);
-  if (isLoading) return <p> Getting winner... </p>;
-  if (!data) return (<button
-        disabled={isLoading}
-        onClick={() =>  {  
-          setLoading(true);
-          fetch("http://localhost:3001/get-winner")
-          .then((res) => res.json())
-          .then((data) => {
-            setData(data);
-            setLoading(false);
-          });
-          }
-        }
-      >
-        Get Winner
-      </button>)
-
-  return (
-    <div>
-       <p> Winner: { data.success ? `${data.winningProposalNumber}. ${data.winningProposal} ` : 'No winner'}</p>
-    </div>
-  );
-}
-
-  function GetRandom ()  {
+  function BetMany ()  {
     const [data, setData] = useState<any>(null);
     const [isLoading, setLoading] = useState(false);
-    if (isLoading) return <p> Getting random number... </p>;
-    if (!data) return (<button
+    const [_betMany, setBetMany] = useState("0");
+    if (isLoading) return <p> Betting many... </p>;
+    if (!data) return (
+      <> 
+       <Box
+        component="form"
+        noValidate
+        autoComplete="off"
+      >
+        <Grid container direction='row' gap={2} alignItems='flex-end'>
+        <Grid item> 
+         <FormControl>
+          <InputLabel htmlFor="proposal-input"> Bet Times </InputLabel>
+          <OutlinedInput 
+              id="proposal-input" 
+              value={_betMany} 
+              onChange={(e) => setBetMany(e.target.value)}
+              label="Bet Many Times"
+          />
+        </FormControl>
+        </Grid>
+        <Grid item>
+        <Button
+          sx={{width: '100%'}}
+          size="large"
+          variant='contained'
           disabled={isLoading}
           onClick={() =>  {  
             setLoading(true);
-            fetch("http://localhost:3001/get-randomNumber")
+            fetch(`http://localhost:3001/betMany?times=${Number(_betMany)}`)
+            .then((res) => res.json())
+            .then((data) => {
+              setData(data);
+              setLoading(false);
+            });
+            }
+          }> Bet Many </Button>
+         </Grid>
+        </Grid>
+      </Box>
+        </>)
+    console.log(data)
+    return (
+      <div>
+         <p> Your Hash is: {data.hash}</p>
+      </div>
+    );
+  }
+
+  function CloseLottery ()  {
+    const [data, setData] = useState<any>(null);
+    const [isLoading, setLoading] = useState(false);
+    
+    if (isLoading) return <p> Closing Lottery... </p>;
+    if (!data) return (<Button
+          variant='contained'
+          disabled={isLoading}
+          onClick={() =>  {  
+            setLoading(true);
+            fetch("http://localhost:3001/closeLottery")
             .then((res) => res.json())
             .then((data) => {
               setData(data);
@@ -297,39 +303,168 @@ function WinningProposal ()  {
             }
           }
         >
-          Get Random Number
-        </button>)
-  
+         Close Lottery
+        </Button>)
+    
     return (
       <div>
-         <p> Random Number: { data }</p>
+         <p> Your Hash is: {data.hash}</p>
       </div>
     );
-}
+    };
 
-function PurchaseTokens ()  {
-  const [data, setData] = useState<any>(null);
-  const [isLoading, setLoading] = useState(false);
-  if (isLoading) return <p>Purchasing tokens... </p>;
-  if (!data) return (<button
-        disabled={isLoading}
-        onClick={() =>  {  
-          setLoading(true);
-          fetch("http://localhost:3001/purchaseTokens")
-          .then((res) => res.json())
-          .then((data) => {
-            setData(data);
-            setLoading(false);
-          });
-          }
-        }
-      >
-        Purchase Tokens
-      </button>)
+    function PrizeWithdraw ()  {
+      const [data, setData] = useState<any>(null);
+      const [isLoading, setLoading] = useState(false);
+      const [_withdraw, setWithdraw] = useState("0");
+      if (isLoading) return <p> Betting many... </p>;
+      if (!data) return (
+        <> 
+         <Box
+          component="form"
+          noValidate
+          autoComplete="off"
+        >
+          <Grid container direction='row' gap={2} alignItems='flex-end'>
+          <Grid item> 
+           <FormControl>
+            <InputLabel htmlFor="proposal-input"> Amount to Withdraw </InputLabel>
+            <OutlinedInput 
+                id="proposal-input" 
+                value={_withdraw} 
+                onChange={(e) => setWithdraw(e.target.value)}
+                label="Witdraw Amount"
+            />
+          </FormControl>
+          </Grid>
+          <Grid item>
+          <Button
+            sx={{width: '100%'}}
+            size="large"
+            variant='contained'
+            disabled={isLoading}
+            onClick={() =>  {  
+              setLoading(true);
+              fetch(`http://localhost:3001/prizeWithdraw?amount=${Number(_withdraw)}`)
+              .then((res) => res.json())
+              .then((data) => {
+                setData(data);
+                setLoading(false);
+              });
+              }
+            }> Withdraw Prize </Button>
+           </Grid>
+          </Grid>
+        </Box>
+          </>)
+      console.log(data)
+      return (
+        <div>
+           <p> Your Hash is: {data.hash}</p>
+        </div>
+      );
+    };  
 
-  return (
-    <div>
-       <p> Your Hash is: {data.hash}</p>
-    </div>
-  );
-}
+    function OwnerWithdraw ()  {
+      const [data, setData] = useState<any>(null);
+      const [isLoading, setLoading] = useState(false);
+      const [_withdraw, setWithdraw] = useState("0");
+      if (isLoading) return <p> Betting many... </p>;
+      if (!data) return (
+        <> 
+         <Box
+          component="form"
+          noValidate
+          autoComplete="off"
+        >
+          <Grid container direction='row' gap={2} alignItems='flex-end'>
+          <Grid item> 
+           <FormControl>
+            <InputLabel htmlFor="proposal-input"> Amount to Withdraw </InputLabel>
+            <OutlinedInput 
+                id="proposal-input" 
+                value={_withdraw} 
+                onChange={(e) => setWithdraw(e.target.value)}
+                label="Witdraw Amount"
+            />
+          </FormControl>
+          </Grid>
+          <Grid item>
+          <Button
+            sx={{width: '100%'}}
+            size="large"
+            variant='contained'
+            disabled={isLoading}
+            onClick={() =>  {  
+              setLoading(true);
+              fetch(`http://localhost:3001/ownerWithdraw?amount=${Number(_withdraw)}`)
+              .then((res) => res.json())
+              .then((data) => {
+                setData(data);
+                setLoading(false);
+              });
+              }
+            }> Owner Withdraw </Button>
+           </Grid>
+          </Grid>
+        </Box>
+          </>)
+      console.log(data)
+      return (
+        <div>
+           <p> Your Hash is: {data.hash}</p>
+        </div>
+      );
+    };  
+
+    function ReturnTokens ()  {
+      const [data, setData] = useState<any>(null);
+      const [isLoading, setLoading] = useState(false);
+      const [_return, setReturn] = useState("0");
+      if (isLoading) return <p> Betting many... </p>;
+      if (!data) return (
+        <> 
+         <Box
+          component="form"
+          noValidate
+          autoComplete="off"
+        >
+          <Grid container direction='row' gap={2} alignItems='flex-end'>
+          <Grid item> 
+           <FormControl>
+            <InputLabel htmlFor="proposal-input"> Tokens to Return </InputLabel>
+            <OutlinedInput 
+                id="proposal-input" 
+                value={_return} 
+                onChange={(e) => setReturn(e.target.value)}
+                label="Return Amount"
+            />
+          </FormControl>
+          </Grid>
+          <Grid item>
+          <Button
+            sx={{width: '100%'}}
+            size="large"
+            variant='contained'
+            disabled={isLoading}
+            onClick={() =>  {  
+              setLoading(true);
+              fetch(`http://localhost:3001/returnTokens?amount=${Number(_return)}`)
+              .then((res) => res.json())
+              .then((data) => {
+                setData(data);
+                setLoading(false);
+              });
+              }
+            }> Return Tokens </Button>
+           </Grid>
+          </Grid>
+        </Box>
+          </>)
+      console.log(data)
+      return (
+        <div>
+           <p> Your Hash is: {data.hash}</p>
+        </div>
+      );
+    };  
